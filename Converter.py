@@ -1,3 +1,6 @@
+# Nudedetector to maps
+# Usage: python converter.py <sourcemap> <optional:destinationmap (if not assigned use sourcemap)>
+
 import os
 import shutil
 from time import sleep
@@ -7,7 +10,11 @@ import PIL
 import magic
 from PIL import Image
 from nudenet import NudeDetector
-
+# Switches
+move = False  # True = move orginal False = copy orginal
+delete = False
+type = 'gif'  # gif / image
+debugshow = False
 # Define
 min_face_size = 0
 min_breast_size = 0
@@ -24,11 +31,7 @@ detector = NudeDetector()
 workdir = sys.argv[1]
 todir = sys.argv[-1]
 
-# Switches
-move = False  # True = move orginal False = copy orginal
-delete = False
-type = 'gif'  # gif / image
-debugshow = False
+
 if not debugshow:
     print('nodebug')
     sleep(1)
