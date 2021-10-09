@@ -11,10 +11,12 @@ import magic
 from PIL import Image
 from nudenet import NudeDetector
 # Switches
-move = False  # True = move orginal False = copy orginal
-delete = False
-type = 'gif'  # gif / image
-debugshow = False
+move = True  # True = move orginal False = copy orginal
+delete = True # Delete orgingal
+type = 'image'  # gif / image
+debugshow = False # Debug
+score = 0.9 # min Score to detect
+showscore = True # Show numbers
 # Define
 min_face_size = 0
 min_breast_size = 0
@@ -25,6 +27,17 @@ min_closeup_size_breasts = 30
 min_closeup_size_pussy = 30
 min_closeup_size_ass = 30
 min_closeup_size_feet = 10
+# Score 0.50 <> 0.99 Lower is more quantity, higher is more quality
+score_exposed_breast = 0.6
+score_covered_breast = 0.9
+score_exposed_pussy = 0.6
+score_covered_pussy = 0.9
+score_covered_butt = 0.9
+score_exposed_butt = 0.9
+score_male = 0.9
+score_face = 0.9
+# Make a extra map for gif
+score_gif = 0.8 # Gif not always expose in the first frame everything and nudedetect do not support gif and frames
 
 cwd = sys.argv[-1]
 detector = NudeDetector()
@@ -89,6 +102,13 @@ for r, d, f in os.walk(workdir, topdown=True):
         filecopynew = os.path.join(cwd, 'Maps', 'Orgineel', basenamenew, imgnew)
         if os.path.exists(filecopynew):
             print('EXIST: ' ,filecopynew)
+            if delete == True:
+                if not imgfileorg == imgfilenew:
+                    print('not contains orgineel and or labels')
+                    os.remove(imgfileorg)
+                else:
+                    print('Protected')
+                    break
             continue
 
         basenamenew = os.path.join(str(os.path.basename(os.path.dirname(imgfilenew))))
@@ -207,22 +227,32 @@ for r, d, f in os.walk(workdir, topdown=True):
         pussy_size = 0
 
         for d in detected:
+            if 'gif' in mime:
+                if d['score'] > score_gif:
+                    detected_tags.add("GIF")
+
             if d['label'] == 'FACE_F':
-                if d['score'] > 0.7:
+                if showscore:
+                    print('\rScore :',d['score'],'Label :',d['label'])
+                if d['score'] > score_face:
                     face_size += (d['box'][2] - d['box'][0]) * (d['box'][3] - d['box'][1])
                     if (face_size / size) > min_face_size:
-                        #detected_tags.add("FACE")
+                        detected_tags.add("FACE")
                         woman += 1
                         face += 1
                     if (face_size / size) > min_closeup_size_face:
                         detected_tags.add("FCLOSE")
-            if d['label'] == 'COVERED_BREAST_F' and d['score'] > 0.8:
+            if d['label'] == 'COVERED_BREAST_F' and d['score'] > score_covered_breast:
+                if showscore:
+                    print('\rScore :',d['score'],'Label :',d['label'])
                 breast_size += (d['box'][2] - d['box'][0]) * (d['box'][3] - d['box'][1])
                 if (breast_size / size) > min_breast_size:
                     detected_tags.add("CBREAST")
                     covered += 1
                     breast += 1
-            if d['label'] == 'EXPOSED_BREAST_F':
+            if d['label'] == 'EXPOSED_BREAST_F' and d['score'] > score_exposed_breast:
+                if showscore:
+                    print('\rScore :',d['score'],'Label :',d['label'])
                 breast_size += (d['box'][2] - d['box'][0]) * (d['box'][3] - d['box'][1])
                 if (breast_size / size) > min_breast_size:
                     detected_tags.add("EBREAST")
@@ -230,15 +260,21 @@ for r, d, f in os.walk(workdir, topdown=True):
                     breast += 1
                     ebreast += 1
                 if (breast_size / size) > min_closeup_size_breasts:
-                    if d['score'] > 0.8:
+                    if showscore:
+                        print('\rScore :',d['score'],'Label :',d['label'])
+                    if d['score'] > score:
                         detected_tags.add("BCLOSE")
-            if d['label'] == 'COVERED_GENITALIA_F' and d['score'] > 0.8:
+            if d['label'] == 'COVERED_GENITALIA_F' and d['score'] > score_covered_pussy:
+                if showscore:
+                    print('\rScore :',d['score'],'Label :',d['label'])
                 pussy_size += (d['box'][2] - d['box'][0]) * (d['box'][3] - d['box'][1])
                 if (pussy_size / size) > min_pussy_size:
                     detected_tags.add("CPUSSY")
                     covered += 1
                     pussy += 1
-            if d['label'] == 'EXPOSED_GENITALIA_F':
+            if d['label'] == 'EXPOSED_GENITALIA_F' and d['score'] > score_exposed_pussy:
+                if showscore:
+                    print('\rScore :',d['score'],'Label :',d['label'])
                 pussy_size += (d['box'][2] - d['box'][0]) * (d['box'][3] - d['box'][1])
                 if (pussy_size / size) > min_pussy_size:
                     detected_tags.add("EPUSSY")
@@ -246,39 +282,39 @@ for r, d, f in os.walk(workdir, topdown=True):
                     pussy += 1
                     epussy += 1
                 if (pussy_size / size) > min_closeup_size_pussy:
-                    if d['score'] > 0.8:
+                    if d['score'] > score:
                         detected_tags.add("PCLOSE")
 
-            # if d['label'] == 'COVERED_BUTTOCKS':
-            #     ass_size += (d['box'][2] - d['box'][0]) * (d['box'][3] - d['box'][1])
-            #     if (ass_size / size) > min_ass_size:
-            #         #detected_tags.add("CASS")
-            #         covered += 1
-            #         butt += 1
-            # if d['label'] == 'EXPOSED_BUTTOCKS':
-            #     ass_size += (d['box'][2] - d['box'][0]) * (d['box'][3] - d['box'][1])
-            #     if (ass_size / size) > min_ass_size:
-            #         #detected_tags.add("EASS")
-            #         exposed += 1
-            #         butt += 1
-            #         ebutt += 1
-            #     if (ass_size / size) > min_closeup_size_ass:
-            #         detected_tags.add("ACLOSE")
-            # if d['label'] == 'EXPOSED_ANUS':
-            #     detected_tags.add("EASS")
-            #     exposed += 1
-            #     ebutt += 1
-            #     butt += 1
-            # if d['label'] == 'EXPOSED_GENITALIA_M':
-            #     dick += 1
-            # if d['label'] == 'FACE_M':
-            #     male += 1
+            if d['label'] == 'COVERED_BUTTOCKS' and d['score'] > score_covered_butt:
+                ass_size += (d['box'][2] - d['box'][0]) * (d['box'][3] - d['box'][1])
+                if (ass_size / size) > min_ass_size:
+                     #detected_tags.add("CASS")
+                    covered += 1
+                    butt += 1
+            if d['label'] == 'EXPOSED_BUTTOCKS' and d['score'] > score_exposed_butt:
+                 ass_size += (d['box'][2] - d['box'][0]) * (d['box'][3] - d['box'][1])
+                 if (ass_size / size) > min_ass_size:
+                     #detected_tags.add("EASS")
+                    exposed += 1
+                    butt += 1
+                    ebutt += 1
+                 if (ass_size / size) > min_closeup_size_ass:
+                    detected_tags.add("ACLOSE")
+            if d['label'] == 'EXPOSED_ANUS' and d['score'] > score_exposed_butt:
+                detected_tags.add("EASS")
+                exposed += 1
+                ebutt += 1
+                butt += 1
+            if d['label'] == 'EXPOSED_GENITALIA_M' and d['score'] > score_male:
+                dick += 1
+            if d['label'] == 'FACE_M' and d['score'] > score_male:
+                male += 1
             if d['label'] == 'EXPOSSED_BELLY':
                 belly += 1
-            # if d['label'] == 'EXPOSED_BREAST_M':
-            #     male += 1
-            # if '_M' in d['label']:
-            #     male += 1
+            if d['label'] == 'EXPOSED_BREAST_M' and d['score'] > score_male:
+                male += 1
+            if '_M' in d['label']:
+                male += 1
 
 
         if woman > 0 and ebreast > 1 and epussy > 0:
@@ -312,12 +348,10 @@ for r, d, f in os.walk(workdir, topdown=True):
         #############MALE############################################################
         #############################################################################
         if male > 0:
-            detected_tags.clear()
             detected_tags.add('MALE')
             if dick > 0:
                 detected_tags.add('DICK')
         if dick > 0:
-            detected_tags.clear()
             detected_tags.add('DICK')
         ########################################################################################
         #FileCopy
