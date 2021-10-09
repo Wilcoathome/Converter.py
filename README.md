@@ -1,7 +1,7 @@
 # Converter.py
 Nudenet map and file sorting
 Usage:
-python converter.py <sourcemap> <optional:destinationmap> 
+python converter.py sourcemap/destination optional:destinationmap 
 
 What it does:
 Take pictures and move to a :
